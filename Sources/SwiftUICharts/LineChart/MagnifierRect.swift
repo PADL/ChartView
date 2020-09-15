@@ -9,6 +9,7 @@ import SwiftUI
 
 public struct MagnifierRect: View {
     @Binding var currentNumber: Double
+    
     var valueSpecifier:String
     @Environment(\.colorScheme) var colorScheme: ColorScheme
     public var body: some View {

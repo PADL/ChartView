@@ -141,7 +141,6 @@ extension Path {
         }
         let offset = globalOffset ?? points.min()!
 
-//        guard let offset = points.min() else { return path }
         path.move(to: .zero)
         var p1 = CGPoint(x: 0, y: CGFloat(points[0]-offset)*step.y)
         path.addLine(to: p1)
@@ -157,12 +156,12 @@ extension Path {
         return path
     }
     
-    static func linePathWithPoints(points:[Double], step:CGPoint) -> Path {
+    static func linePathWithPoints(points:[Double], step:CGPoint, globalOffset: Double? = nil) -> Path {
         var path = Path()
         if (points.count < 2){
             return path
         }
-        guard let offset = points.min() else { return path }
+        let offset = globalOffset ?? points.min()!
         let p1 = CGPoint(x: 0, y: CGFloat(points[0]-offset)*step.y)
         path.move(to: p1)
         for pointIndex in 1..<points.count {
@@ -172,12 +171,12 @@ extension Path {
         return path
     }
     
-    static func closedLinePathWithPoints(points:[Double], step:CGPoint) -> Path {
+    static func closedLinePathWithPoints(points:[Double], step:CGPoint, globalOffset: Double? = nil) -> Path {
         var path = Path()
         if (points.count < 2){
             return path
         }
-        guard let offset = points.min() else { return path }
+        let offset = globalOffset ?? points.min()!
         var p1 = CGPoint(x: 0, y: CGFloat(points[0]-offset)*step.y)
         path.move(to: p1)
         for pointIndex in 1..<points.count {
@@ -350,4 +349,3 @@ extension CGPoint {
         return controlPoint
     }
 }
-

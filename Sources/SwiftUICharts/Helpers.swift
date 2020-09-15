@@ -30,7 +30,11 @@ public struct Colors {
     public static let BorderBlue:Color = Color(hexString: "#4EBCFF")
 }
 
-public struct GradientColor {
+public protocol GradientColoring {
+    func getGradient() -> Gradient
+}
+
+public struct GradientColor: GradientColoring {
     public let start: Color
     public let end: Color
     
@@ -65,6 +69,15 @@ public struct Styles {
         legendTextColor: Color.gray,
         dropShadowColor: Color.gray)
     
+    public static let lineChartStyleTwo = ChartStyle(
+        backgroundColor: Color.white,
+        accentColor: GradientColors.blue.start,
+        secondGradientColor: GradientColors.blue.end,
+        textColor: Color.black,
+        legendTextColor: Color.gray,
+        dropShadowColor: Color.gray,
+        magnifierRect: false)
+
     public static let barChartStyleOrangeLight = ChartStyle(
         backgroundColor: Color.white,
         accentColor: Colors.OrangeStart,
@@ -128,6 +141,8 @@ public struct Styles {
         textColor: Color.white,
         legendTextColor: Color.white,
         dropShadowColor: Color.gray)
+    
+
 }
 
 public struct ChartForm {
@@ -149,37 +164,41 @@ public struct ChartForm {
 public class ChartStyle {
     public var backgroundColor: Color
     public var accentColor: Color
-    public var gradientColor: GradientColor
+    public var gradientColor: GradientColoring
     public var textColor: Color
     public var legendTextColor: Color
     public var dropShadowColor: Color
     public weak var darkModeStyle: ChartStyle?
+    public var magnifierRect: Bool = true
     
-    public init(backgroundColor: Color, accentColor: Color, secondGradientColor: Color, textColor: Color, legendTextColor: Color, dropShadowColor: Color){
+    public init(backgroundColor: Color, accentColor: Color, secondGradientColor: Color, textColor: Color, legendTextColor: Color, dropShadowColor: Color, magnifierRect: Bool = true){
         self.backgroundColor = backgroundColor
         self.accentColor = accentColor
         self.gradientColor = GradientColor(start: accentColor, end: secondGradientColor)
         self.textColor = textColor
         self.legendTextColor = legendTextColor
         self.dropShadowColor = dropShadowColor
+        self.magnifierRect = magnifierRect
     }
     
-    public init(backgroundColor: Color, accentColor: Color, gradientColor: GradientColor, textColor: Color, legendTextColor: Color, dropShadowColor: Color){
+    public init(backgroundColor: Color, accentColor: Color, gradientColor: GradientColoring, textColor: Color, legendTextColor: Color, dropShadowColor: Color, magnifierRect: Bool = true){
         self.backgroundColor = backgroundColor
         self.accentColor = accentColor
         self.gradientColor = gradientColor
         self.textColor = textColor
         self.legendTextColor = legendTextColor
         self.dropShadowColor = dropShadowColor
+        self.magnifierRect = magnifierRect
     }
     
-    public init(formSize: CGSize){
+    public init(formSize: CGSize, magnifierRect: Bool = true) {
         self.backgroundColor = Color.white
         self.accentColor = Colors.OrangeStart
         self.gradientColor = GradientColors.orange
         self.legendTextColor = Color.gray
         self.textColor = Color.black
         self.dropShadowColor = Color.gray
+        self.magnifierRect = magnifierRect
     }
 }
 
@@ -187,29 +206,56 @@ public class ChartData: ObservableObject, Identifiable {
     @Published var points: [(String,Double)]
     var valuesGiven: Bool = false
     var ID = UUID()
+    public typealias Scale = (min: Double, max: Double)
+    @Published var scale: Scale?
     
-    public init<N: BinaryFloatingPoint>(points:[N]) {
+    public init<N: BinaryFloatingPoint>(points:[N], scale: Scale? = nil) {
         self.points = points.map{("", Double($0))}
+        self.scale = scale
     }
-    public init<N: BinaryInteger>(values:[(String,N)]){
+    public init<N: BinaryInteger>(values:[(String,N)], scale: Scale? = nil){
         self.points = values.map{($0.0, Double($0.1))}
         self.valuesGiven = true
+        self.scale = scale
     }
-    public init<N: BinaryFloatingPoint>(values:[(String,N)]){
+    public init<N: BinaryFloatingPoint>(values:[(String,N)], scale: Scale? = nil){
         self.points = values.map{($0.0, Double($0.1))}
         self.valuesGiven = true
+        self.scale = scale
     }
-    public init<N: BinaryInteger>(numberValues:[(N,N)]){
+    public init<N: BinaryInteger>(numberValues:[(N,N)], scale: Scale? = nil){
         self.points = numberValues.map{(String($0.0), Double($0.1))}
         self.valuesGiven = true
+        self.scale = scale
     }
-    public init<N: BinaryFloatingPoint & LosslessStringConvertible>(numberValues:[(N,N)]){
+    public init<N: BinaryFloatingPoint & LosslessStringConvertible>(numberValues:[(N,N)], scale: Scale? = nil){
         self.points = numberValues.map{(String($0.0), Double($0.1))}
         self.valuesGiven = true
+        self.scale = scale
     }
     
     public func onlyPoints() -> [Double] {
         return self.points.map{ $0.1 }
+    }
+    
+    public var scaleMin: Double {
+        if let scale = self.scale {
+            return scale.min
+        } else if let pointsMin = self.onlyPoints().min() {
+            return pointsMin
+        } else {
+            return 0
+        }
+    }
+    
+    public var scaleMax: Double {
+        if let scale = self.scale {
+            return scale.max
+        } else if let pointsMax = self.onlyPoints().max() {
+            return pointsMax
+        } else {
+            return 0
+        }
     }
 }
 

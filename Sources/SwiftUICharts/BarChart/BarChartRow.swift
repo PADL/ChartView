@@ -11,7 +11,7 @@ import SwiftUI
 public struct BarChartRow : View {
     var data: [Double]
     var accentColor: Color
-    var gradient: GradientColor?
+    var gradient: GradientColoring?
     
     var maxValue: Double {
         guard let max = data.max() else {

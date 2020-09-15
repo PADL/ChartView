@@ -104,9 +104,8 @@ public struct LineChartView: View {
                          frame: .constant(geometry.frame(in: .local)),
                          touchLocation: self.$touchLocation,
                          showIndicator: self.$showIndicatorDot,
-                         minDataValue: .constant(nil),
-                         maxDataValue: .constant(nil)
-                    )
+                         indicatorColor: .constant(Colors.IndicatorKnob),
+                         gradient: GradientColor(start: Colors.GradientPurple, end: Colors.GradientNeonBlue))
                 }
                 .frame(width: frame.width, height: frame.height + 30)
                 .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -145,7 +144,7 @@ struct WidgetView_Previews: PreviewProvider {
             LineChartView(data: [8,23,54,32,12,37,7,23,43], title: "Line chart", legend: "Basic")
                 .environment(\.colorScheme, .light)
             
-            LineChartView(data: [282.502, 284.495, 283.51, 285.019, 285.197, 286.118, 288.737, 288.455, 289.391, 287.691, 285.878, 286.46, 286.252, 284.652, 284.129, 284.188], title: "Line chart", legend: "Basic")
+            LineChartView(data: [282.502, 284.495, 283.51, 285.019, 285.197, 286.118, 288.737, 288.455, 289.391, 287.691, 285.878, 286.46, 286.252, 284.652, 284.129, 284.188], title: "Line chart", legend: "Basic", valueSpecifier: "%.2f")
             .environment(\.colorScheme, .light)
         }
     }

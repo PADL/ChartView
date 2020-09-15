@@ -17,7 +17,7 @@ public struct BarChartCell : View {
         return Double(width)/(Double(numberOfDataPoints) * 1.5)
     }
     var accentColor: Color
-    var gradient: GradientColor?
+    var gradient: GradientColoring?
     
     @State var scaleValue: Double = 0
     @Binding var touchLocation: CGFloat

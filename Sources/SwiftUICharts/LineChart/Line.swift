@@ -13,13 +13,13 @@ public struct Line: View {
     @Binding var frame: CGRect
     @Binding var touchLocation: CGPoint
     @Binding var showIndicator: Bool
-    @Binding var minDataValue: Double?
-    @Binding var maxDataValue: Double?
+    @Binding var indicatorColor: Color
     @State private var showFull: Bool = false
     @State var showBackground: Bool = true
-    var gradient: GradientColor = GradientColor(start: Colors.GradientPurple, end: Colors.GradientNeonBlue)
+    var gradient: GradientColoring
+    
     var index:Int = 0
-    let padding:CGFloat = 30
+    let padding:CGFloat = 0
     var curvedLines: Bool = true
     var stepWidth: CGFloat {
         if data.points.count < 2 {
@@ -28,37 +28,28 @@ public struct Line: View {
         return frame.size.width / CGFloat(data.points.count-1)
     }
     var stepHeight: CGFloat {
-        var min: Double?
-        var max: Double?
-        let points = self.data.onlyPoints()
-        if minDataValue != nil && maxDataValue != nil {
-            min = minDataValue!
-            max = maxDataValue!
-        }else if let minPoint = points.min(), let maxPoint = points.max(), minPoint != maxPoint {
-            min = minPoint
-            max = maxPoint
-        }else {
+        var divisor = self.data.scaleMax - self.data.scaleMin
+        
+        if divisor == 0 {
             return 0
+        } else if self.data.scaleMin > self.data.scaleMax {
+            divisor.negate()
         }
-        if let min = min, let max = max, min != max {
-            if (min <= 0){
-                return (frame.size.height-padding) / CGFloat(max - min)
-            }else{
-                return (frame.size.height-padding) / CGFloat(max - min)
-            }
-        }
-        return 0
+        
+        return (frame.size.height - padding) / CGFloat(divisor)
     }
     var path: Path {
         let points = self.data.onlyPoints()
-        return curvedLines ? Path.quadCurvedPathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight), globalOffset: minDataValue) : Path.linePathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight))
+        return curvedLines ? Path.quadCurvedPathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight), globalOffset: data.scaleMin) : Path.linePathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight), globalOffset: data.scaleMin)
     }
     var closedPath: Path {
         let points = self.data.onlyPoints()
-        return curvedLines ? Path.quadClosedCurvedPathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight), globalOffset: minDataValue) : Path.closedLinePathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight))
+        return curvedLines ? Path.quadClosedCurvedPathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight), globalOffset: data.scaleMin) : Path.closedLinePathWithPoints(points: points, step: CGPoint(x: stepWidth, y: stepHeight), globalOffset: data.scaleMin)
     }
     
     public var body: some View {
+        let pathGradient = gradient.getGradient()
+        
         ZStack {
             if(self.showFull && self.showBackground){
                 self.closedPath
@@ -70,7 +61,7 @@ public struct Line: View {
             }
             self.path
                 .trim(from: 0, to: self.showFull ? 1:0)
-                .stroke(LinearGradient(gradient: gradient.getGradient(), startPoint: .leading, endPoint: .trailing) ,style: StrokeStyle(lineWidth: 3, lineJoin: .round))
+                .stroke(LinearGradient(gradient: pathGradient, startPoint: .leading, endPoint: .trailing), style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
                 .rotationEffect(.degrees(180), anchor: .center)
                 .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
                 .animation(Animation.easeOut(duration: 1.2).delay(Double(self.index)*0.4))
@@ -81,8 +72,10 @@ public struct Line: View {
                 self.showFull = false
             }
             .drawingGroup()
-            if(self.showIndicator) {
-                IndicatorPoint()
+            // XXX this seems to cause it to undraw itself
+            //.id(pathGradient.stops.map { $0.color })
+            if self.showIndicator && getClosestPointOnPath(touchLocation: self.touchLocation).y > 0 {
+                IndicatorPoint(color: indicatorColor)
                     .position(self.getClosestPointOnPath(touchLocation: self.touchLocation))
                     .rotationEffect(.degrees(180), anchor: .center)
                     .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
@@ -94,13 +87,18 @@ public struct Line: View {
         let closest = self.path.point(to: touchLocation.x)
         return closest
     }
-    
 }
 
 struct Line_Previews: PreviewProvider {
     static var previews: some View {
         GeometryReader{ geometry in
-            Line(data: ChartData(points: [12,-230,10,54]), frame: .constant(geometry.frame(in: .local)), touchLocation: .constant(CGPoint(x: 100, y: 12)), showIndicator: .constant(true), minDataValue: .constant(nil), maxDataValue: .constant(nil))
+            Line(data: ChartData(points: [12,-230,10,54]),
+                 frame: .constant(geometry.frame(in: .local)),
+                 touchLocation: .constant(CGPoint(x: 100, y: 12)),
+                 showIndicator: .constant(true),
+                 indicatorColor: .constant(Colors.IndicatorKnob),
+                 gradient: GradientColor(start: Colors.GradientPurple,
+                                                   end: Colors.GradientNeonBlue))
         }.frame(width: 320, height: 160)
     }
 }
